@@ -143,27 +143,6 @@ func DefaultDownloadConfig() *DownloadConfig {
 	}
 }
 
-// DefaultSoundstackConfig returns a config with soundstack/adzwizz query parameters
-// TODO: MOVE OUT OF pkg/stream. We don't want ad bypassing to be public info.
-func DefaultSoundstackConfig() *DownloadConfig {
-	config := DefaultDownloadConfig()
-
-	// Add soundstack/adzwizz rule
-	config.QueryParamRules = []QueryParamRule{
-		{
-			HostPatterns: []string{"cdnstream1.com", "soundstack", "adzwizz"},
-			QueryParams: map[string]string{
-				"aw_0_1st.premium":           "true",
-				"partnerID":                  "BotTIStream",
-				"playerid":                   "BotTIStream",
-				"aw_0_1st.ads_partner_alias": "bot.TIStream",
-			},
-		},
-	}
-
-	return config
-}
-
 // DownloadAudioSample downloads live HLS audio for the specified duration
 func (ad *AudioDownloader) DownloadAudioSample(ctx context.Context, playlistURL string, targetDuration time.Duration) (*common.AudioData, error) {
 	logger := logging.WithFields(logging.Fields{
@@ -1067,11 +1046,12 @@ func (ad *AudioDownloader) parseM3U8(reader io.Reader, playlistURL string) (*M3U
 	}
 
 	logger.Debug("M3U8 parsing completed", logging.Fields{
-		"lines_parsed":   lineCount,
-		"segments_found": len(playlist.Segments),
-		"variants_found": len(playlist.Variants),
-		"is_master":      playlist.IsMaster,
-		"is_live":        playlist.IsLive,
+		"lines_parsed": lineCount,
+		// TODO: Possible nullptr deref
+		// "segments_found": len(playlist.Segments),
+		// "variants_found": len(playlist.Variants),
+		// "is_master":      playlist.IsMaster,
+		// "is_live":        playlist.IsLive,
 	})
 
 	// Add explicit nil check before returning:
@@ -1571,63 +1551,6 @@ func (ad *AudioDownloader) normalizePCM(samples []float64) {
 			samples[i] *= factor
 		}
 	}
-}
-
-// combineAudioSamples combines multiple audio samples into one
-func (ad *AudioDownloader) combineAudioSamples(samples []*common.AudioData) (*common.AudioData, error) {
-	if len(samples) == 0 {
-		return nil, fmt.Errorf("no audio samples to combine")
-	}
-
-	if len(samples) == 1 {
-		return samples[0], nil
-	}
-
-	logger := logging.WithFields(logging.Fields{
-		"component":    "hls_audio_downloader",
-		"function":     "combineAudioSamples",
-		"sample_count": len(samples),
-	})
-
-	firstSample := samples[0]
-	combined := &common.AudioData{
-		SampleRate: firstSample.SampleRate,
-		Channels:   firstSample.Channels,
-		Timestamp:  firstSample.Timestamp,
-		Metadata:   firstSample.Metadata,
-	}
-
-	// Validate all samples have compatible formats
-	totalSamples := 0
-	for i, sample := range samples {
-		if sample.SampleRate != combined.SampleRate {
-			return nil, fmt.Errorf("sample rate mismatch at index %d: expected %d, got %d",
-				i, combined.SampleRate, sample.SampleRate)
-		}
-		if sample.Channels != combined.Channels {
-			return nil, fmt.Errorf("channel count mismatch at index %d: expected %d, got %d",
-				i, combined.Channels, sample.Channels)
-		}
-		totalSamples += len(sample.PCM)
-		combined.Duration += sample.Duration
-	}
-
-	// Combine all PCM data
-	combined.PCM = make([]float64, totalSamples)
-	offset := 0
-	for _, sample := range samples {
-		copy(combined.PCM[offset:], sample.PCM)
-		offset += len(sample.PCM)
-	}
-
-	logger.Debug("Audio samples combined successfully", logging.Fields{
-		"total_samples":     len(combined.PCM),
-		"combined_duration": combined.Duration.Seconds(),
-		"final_sample_rate": combined.SampleRate,
-		"final_channels":    combined.Channels,
-	})
-
-	return combined, nil
 }
 
 // downloadSegmentWithRetries downloads a segment with retry logic

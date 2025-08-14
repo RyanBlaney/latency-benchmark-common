@@ -426,6 +426,7 @@ func (h *Handler) ReadAudio(ctx context.Context) (*common.AudioData, error) {
 	// Initialize downloader if not exists
 	if h.downloader == nil {
 		// TODO: pass download config
+		// For now we aren't even using this
 		h.downloader = NewAudioDownloader(h.client, DefaultDownloadConfig(), h.config)
 		// Set the base URL for resolving relative segment URLs
 		h.downloader.SetBaseURL(h.url)

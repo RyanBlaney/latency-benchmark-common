@@ -291,15 +291,7 @@ func (d *Decoder) DecodeURL(url string, duration time.Duration, streamType strin
 		)
 	case "hls":
 		args = append(args,
-			"-protocol_whitelist", "file,http,https,tcp,tls",
-			"-timeout", "60000000",
-			"-rw_timeout", "30000000",
-			"-user_agent", "Mozilla/5.0",
-			"-live_start_index", "-3", // Force latest segment
-			"-fflags", "+genpts+igndts+flush_packets",
-			"-avoid_negative_ts", "disabled",
-			"-probesize", "32",
-			"-analyzeduration", "0",
+			"-live_start_index", "-1",
 		)
 	default:
 		// For unknown stream types, log a warning but continue

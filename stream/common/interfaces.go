@@ -17,7 +17,6 @@ const (
 )
 
 // StreamMetadata contains metadata and info about the stream
-// TODO: ensure metadata matches all possible content types
 type StreamMetadata struct {
 	URL         string            `json:"url"`
 	Type        StreamType        `json:"type"`
