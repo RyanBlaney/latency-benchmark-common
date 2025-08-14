@@ -280,14 +280,9 @@ func (d *Decoder) DecodeURL(url string, duration time.Duration, streamType strin
 	case "icecast":
 		// Add reconnection flags for Icecast streams
 		args = append(args,
-			"-re",
 			"-reconnect", "1",
 			"-reconnect_at_eof", "1",
 			"-reconnect_streamed", "1",
-			"-reconnect_delay_max", "2",
-			"-fflags", "+genpts+igndts", // Generate PTS, ignore DTS for live
-			"-rw_timeout", "30000000", // 30 second read timeout
-			"-timeout", "60000000", // 60 second total timeout
 		)
 	case "hls":
 		args = append(args,
